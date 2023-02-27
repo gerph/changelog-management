@@ -56,7 +56,7 @@ The files are stored in two location:
   a single '[UNRELEASED]' section, ordered alphabetically (but with
   'master' placed first, as it contains the main changes).
 
-## Workflow
+## Usage
 
 For almost all the operations the workflow goes through the management
 script `changelogs/cli.py`. This tool takes a command as a parameter
@@ -102,3 +102,13 @@ that the new release file is created correctly. This will also
 `git add` the new release file, and `git rm` the changelogs in
 current which have been collated.
 
+### Statistics on releases
+
+To create a HTML table showing the statistics about the number of
+changes in each release, a simple command can be used:
+
+    changelogs/cli.py statistics-table --output stats.html
+
+This will report the number of changes in each group in the
+changelogs by release number. The changes in the current release
+can also be included by specifying `--current`.

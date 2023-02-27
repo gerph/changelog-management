@@ -349,11 +349,87 @@ class CommandEdit(Command):
             print(fn)
 
 
+class CommandStatisticsTable(Command):
+
+    def setup_parser(self, parser):
+        parser.add_argument('--output',
+                            default=None,
+                            nargs='?',
+                            help="Filename to write output to (defaults to stdout)")
+        parser.add_argument('--current',
+                            action='store_true',
+                            help="Include the current change log in the table")
+
+    def execute(self, args):
+        all_logfiles = locate_released_logs()
+
+        ordered_releases = sorted(all_logfiles.keys())
+        headings = ['Release']
+        headings.extend(['{}.{:02d}'.format(key[0], key[1]) for key in ordered_releases])
+
+        # Accumulate the counts for each change type
+        all_changelogs = dict((key, changelog.ChangelogFile(filename)) for key, filename in all_logfiles.items())
+
+        if args.current:
+            clc = current_log()
+            headings.append(clc.version)
+            ordered_releases.append(clc.version)
+            all_changelogs[clc.version] = clc
+
+        rows = []
+        for group in changelog.default_groups:
+            row = [group]
+            for release in ordered_releases:
+                cl = all_changelogs[release]
+                row.append(len(cl[group]))
+            rows.append(row)
+
+        # Add the totals row
+        row = ["TOTAL"]
+        for release in ordered_releases:
+            cl = all_changelogs[release]
+            row.append(cl.changes())
+        rows.append(row)
+
+        # FIXME: We should be able to replace this with CSV output with an option.
+
+        output = []
+        # FIXME: Add an option for omitting the style?
+        output.extend(["<style>",
+                       "<!-- "
+                       "table.pyrostats { border: 1px solid black; border-collapse: collapse; }",
+                       "table.pyrostats tr { border: 1px solid black; }",
+                       "table.pyrostats th { border: 1px solid black; text-align: left; padding: 0.125em 0.25em; }",
+                       "table.pyrostats td { border: 1px solid black; text-align: right; padding: 0.125em 0.25em; }",
+                       "table.pyrostats .datanone { color: gray; }",
+                       "-->"
+                       "</style>",
+                      ])
+        output.append('<table class="pyrostats">')
+        output.append('  <tr>')
+        output.extend(['    <th>{}</th>'.format(heading) for heading in headings])
+        output.append('  </tr>')
+        for row in rows:
+            output.append('  <tr class="datarow">')
+            output.append('    <th>{}</th>'.format(row[0]))
+            output.extend(['    <td class="{}">{}</td>'.format("datanone" if value is 0 else "",
+                                                               value) for value in row[1:]])
+            output.append('  </tr>')
+        output.append('</table>')
+
+        if args.output:
+            with open(args.output, 'w') as fh:
+                fh.write("\n".join(output))
+        else:
+            sys.stdout.write("\n".join(output))
+
+
 available_commands = (
         CommandFullChangelog,
         CommandEdit,
         CommandCurrent,
         CommandCollate,
+        CommandStatisticsTable,
     )
 
 

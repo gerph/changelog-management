@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/python
 """
 Decode the ChangeLog files.
 
@@ -40,6 +40,9 @@ class ChangelogBase(object):
                                                       len(self.groups),
                                                       self.changes())
 
+    def __getitem__(self, index):
+        return self.groups.get(index, [])
+
     def md(self, all_groups=True):
         """
         Return the markdown representation of the structured elements.
@@ -69,7 +72,7 @@ class ChangelogBase(object):
 
 class ChangelogFile(ChangelogBase):
     """
-    Comprises te content of a single changelog file.
+    Comprises the content of a single changelog file.
     """
     version = None
 
