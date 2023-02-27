@@ -32,6 +32,7 @@ import datetime
 import os
 import re
 import subprocess
+import sys
 
 import changelog
 import editor
@@ -233,7 +234,7 @@ class CommandFullChangelog(Command):
 
         # Show the current, unreleased version
         clc = current_log()
-        if clc.changes:
+        if clc.changes():
             # Only show the current log if there's something present.
             lines = clc.md(all_groups=False)
             for line in lines:
