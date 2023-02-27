@@ -161,7 +161,23 @@ class Git(object):
         """
         Get the name of the current branch.
         """
-        return cls.capture(['branch', '--show-current']).strip()
+        branch = cls.capture(['branch', '--show-current']).strip()
+        if not branch:
+            # If we're in the middle of a rebase or otherwise behind the main branch,
+            # the above branch will be empty.
+            text = cls.capture(['rev-parse', 'HEAD']).strip()
+            if text.startswith('HEAD '):
+                text = text[6:]
+                if '~' in text:
+                    (text, count) = text.split('~')
+            else:
+                # We don't recognise the branch.
+                return None
+
+        if not isinstance(branch, str):
+            # Convert from (probably) bytes to a regular unicode string
+            branch = branch.decode('utf-8')
+        return branch
 
     @classmethod
     def add_file(cls, fn):
@@ -304,7 +320,7 @@ class CommandEdit(Command):
                             help="Name of the new changelog entry to create")
 
     def execute(self, args):
-        branch = Git.branch_name()
+        branch = Git.branch_name() or 'change'
         fn = os.path.join(current_dir, "{}.md".format(branch))
 
         # If the file doesn't exist, create a template
