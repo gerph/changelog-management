@@ -2,7 +2,7 @@
 Very basic markdown parser.
 """
 
-
+import sys
 import textwrap
 
 
@@ -22,17 +22,17 @@ class MDBlock(object):
                                                    content)
 
     def write(self, text):
-        sys.write(text)
+        sys.stdout.write(text)
 
     def writeln(self, text):
-        sys.write(text + "\n")
+        sys.stdout.write(text + "\n")
 
     def writewrapped(self, text, indent=''):
-        textwrap.wrap(text, initial_indent='', subsequent_indent=intent)
+        textwrap.wrap(text, initial_indent='', subsequent_indent=indent)
 
     def render(self):
         indent = ' ' * self.level
-        self.writewrapped(text, indent=indent)
+        self.writewrapped(self.content, indent=indent)
         self.writeln("")
 
 
