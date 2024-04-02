@@ -43,6 +43,19 @@ releases_dir = os.path.join(this_dir, 'releases')
 current_dir = os.path.join(this_dir, 'current')
 
 
+def set_changelogs_directory(changelogs_dir):
+    global releases_dir
+    global current_dir
+    releases_dir = os.path.join(changelogs_dir, 'releases')
+    current_dir = os.path.join(changelogs_dir, 'current')
+
+    # Ensure that the directories exists
+    if not os.path.isdir(releases_dir):
+        os.makedirs(releases_dir)
+    if not os.path.isdir(current_dir):
+        os.makedirs(current_dir)
+
+
 def locate_released_logs():
     """
     Return the version numbers and filenames of the logs.
@@ -397,15 +410,15 @@ class CommandStatisticsTable(Command):
         # FIXME: Add an option for omitting the style?
         output.extend(["<style>",
                        "<!-- "
-                       "table.pyrostats { border: 1px solid black; border-collapse: collapse; }",
-                       "table.pyrostats tr { border: 1px solid black; }",
-                       "table.pyrostats th { border: 1px solid black; text-align: left; padding: 0.125em 0.25em; }",
-                       "table.pyrostats td { border: 1px solid black; text-align: right; padding: 0.125em 0.25em; }",
-                       "table.pyrostats .datanone { color: gray; }",
+                       "table.changelog-stats { border: 1px solid black; border-collapse: collapse; }",
+                       "table.changelog-stats tr { border: 1px solid black; }",
+                       "table.changelog-stats th { border: 1px solid black; text-align: left; padding: 0.125em 0.25em; }",
+                       "table.changelog-stats td { border: 1px solid black; text-align: right; padding: 0.125em 0.25em; }",
+                       "table.changelog-stats .datanone { color: gray; }",
                        "-->"
                        "</style>",
                       ])
-        output.append('<table class="pyrostats">')
+        output.append('<table class="changelog-stats">')
         output.append('  <tr>')
         output.extend(['    <th>{}</th>'.format(heading) for heading in headings])
         output.append('  </tr>')
@@ -436,6 +449,11 @@ available_commands = (
 def main():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--changelogs',
+                        default=None,
+                        nargs='?',
+                        help="Directory to use for change log files")
+
     subparsers = parser.add_subparsers(help='Commands',
                                        dest='cmd')
 
@@ -448,6 +466,9 @@ def main():
         dispatch[command.name] = command
 
     options = parser.parse_args()
+
+    if options.changelogs:
+        set_changelogs_directory(options.changelogs)
 
     if options.cmd in dispatch:
         command = dispatch[options.cmd]
