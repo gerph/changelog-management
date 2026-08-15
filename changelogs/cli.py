@@ -109,6 +109,20 @@ def locate_current_logs():
     return [os.path.join(current_dir, fn) for fn in mdfiles]
 
 
+def current_logs():
+    """
+    Collect all the current (per-branch, unreleased) logs together.
+
+    @return: List of ChangelogFile objects, one per branch, in filename order.
+    """
+    logs = []
+    for fn in locate_current_logs():
+        clf = changelog.ChangelogFile(fn)
+        logs.append(clf)
+
+    return logs
+
+
 def current_log(version='[UNRELEASED]', base_changelog=None):
     """
     Collect the current log.
@@ -334,10 +348,20 @@ class CommandEdit(Command):
                             help="Name of the new changelog entry to create")
 
     def execute(self, args):
+        # If we are running under an agent, then only print filename
+        under_agent = bool(
+            os.environ.get('AGENT')
+            or os.environ.get('GEMINI_CLI') == '1'
+            or os.environ.get('QWEN_CODE') == '1'
+            or os.environ.get('CLAUDECODE') == '1'
+            or os.environ.get('CODEX_HOME')
+        )
+
         branch = Git.branch_name() or 'change'
         fn = os.path.join(current_dir, "{}.md".format(branch))
 
         # If the file doesn't exist, create a template
+        created = False
         if not os.path.isfile(fn):
             if not os.path.isdir(current_dir):
                 os.makedirs(current_dir)
@@ -351,15 +375,22 @@ class CommandEdit(Command):
 
             with open(fn, 'w') as fh:
                 fh.write('\n'.join(clf.md()))
+            created = True
 
-        if not args.no_edit:
-            edit = editor.HostEditor()
-            status = edit.edit_inplace(fn)
-            if status == 0:
-                Git.add_file(fn)
+        if under_agent:
+            if created:
+                print("Created changelog file: %s" % (fn,))
+            else:
+                print("Changelog file is: %s" % (fn,))
         else:
-            # Just print the filename
-            print(fn)
+            if not args.no_edit:
+                edit = editor.HostEditor()
+                status = edit.edit_inplace(fn)
+                if status == 0:
+                    Git.add_file(fn)
+            else:
+                # Just print the filename
+                print(fn)
 
 
 class CommandStatisticsTable(Command):
